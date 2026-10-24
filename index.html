@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sport Circle</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- External Fonts & Libraries -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
+  
+  <!-- ลิงก์เชื่อมไปยังไฟล์ CSS ที่เราแยกออกไป -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- หน้าเข้าสู่ระบบ (ภาษาไทย 100%) -->
+  <div class="login-screen active" id="loginScreen">
+    <div class="login-card">
+      <div class="brand">
+        <div class="logo-lg">SC</div>
+        <h1>Sport Circle</h1>
+        <p>ระบบจองสนามกีฬาและบริหารจัดการคอร์ทออนไลน์</p>
+      </div>
+      <div class="login-tabs">
+        <button class="active" onclick="switchLoginTab(this, 'login')">เข้าสู่ระบบ</button>
+        <button onclick="switchLoginTab(this, 'signup')">สมัครสมาชิก</button>
+      </div>
+      
+      <!-- ฟอร์มเข้าสู่ระบบ -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>อีเมล</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>รหัสผ่าน</label>
+          <input type="password" id="loginPassword" placeholder="กรอกรหัสผ่าน">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="handleLogin()">เข้าสู่ระบบ</button>
+      </div>
+      
+      <!-- ฟอร์มสมัครสมาชิก -->
+      <div id="signupForm" style="display:none">
+        <div class="signup-avatar">
+          <div class="signup-avatar-pick" id="signUpAvatarPreview" role="button" tabindex="0" title="เลือกรูปโปรไฟล์" onclick="openAvatarPicker('signup')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAvatarPicker('signup');}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+          <input type="file" id="signUpAvatar" accept="image/*" hidden onchange="previewSignUpAvatar(this)">
+          <input type="file" id="signUpAvatarCamera" accept="image/*" capture="user" hidden onchange="previewSignUpAvatar(this)">
+          <div class="signup-avatar-text">
+            <span>รูปโปรไฟล์ (ไม่บังคับ)</span>
+            <button type="button" id="signUpAvatarClear" class="avatar-remove-btn" style="display:none" onclick="clearSignUpAvatar()">ลบรูป</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ชื่อ - นามสกุล</label>
+          <input type="text" id="signUpName" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div class="form-group">
+          <label>อีเมล</label>
+          <input type="email" id="signUpEmail" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input type="tel" id="signUpPhone" placeholder="เช่น 0812345678">
+        </div>
+        <div class="form-group">
+          <label>รหัสผ่าน</label>
+          <div class="pw-input-wrap">
+            <input type="password" id="signUpPassword" placeholder="ตั้งรหัสผ่านให้แข็งแรง" oninput="updatePasswordStrength(this.value)" autocomplete="new-password">
+            <button type="button" class="pw-toggle" id="signUpPasswordToggle" onclick="togglePasswordVisibility('signUpPassword', this)" aria-label="แสดงรหัสผ่าน" title="แสดงรหัสผ่าน"><svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg></button>
+          </div>
+          <div class="pw-strength" id="pwStrength">
+            <div class="pw-strength-head">
+              <span>ความแข็งแรงของรหัสผ่าน</span>
+              <span id="pwStrengthLabel" class="pw-strength-label">0% - ยังไม่ได้กรอก</span>
+            </div>
+            <div class="pw-bar"><div class="pw-bar-fill" id="pwBarFill"></div></div>
+            <ul class="pw-rules">
+              <li id="pwRuleLen">ความยาวอย่างน้อย 8 ตัวอักษร</li>
+              <li id="pwRuleUpper">ตัวพิมพ์ใหญ่ A-Z อย่างน้อย 1 ตัว</li>
+              <li id="pwRuleNum">ตัวเลข 0-9 อย่างน้อย 1 ตัว</li>
+              <li id="pwRuleSym">สัญลักษณ์พิเศษ เช่น ! @ # $ % อย่างน้อย 1 ตัว</li>
+            </ul>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="handleSignUp()">สร้างบัญชีผู้ใช้งาน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- โครงสร้างหลักของแอป -->
+  <div class="app-container" id="appShell" style="display:none">
+    <!-- ปุ่มลอยสำหรับกดซ่อน/แสดงแถบเมนูบนมือถือ -->
+    <button type="button" id="mobileNavToggleBtn" class="mobile-nav-toggle" onclick="toggleMobileNav()">
+      <span id="mobileNavToggleText">▼ ซ่อนเมนู</span>
+    </button>
+
+    <!-- ปุ่มแจ้งเตือนมุมบนขวา (Notification Bell) -->
+    <div class="app-top-actions">
+      <button type="button" id="notifBellBtn" class="notif-bell-btn" onclick="toggleNotificationDrawer()" title="การแจ้งเตือน (Notifications)" aria-label="Notifications">
+        <i data-lucide="bell" width="20" height="20"></i>
+        <span id="notifBadge" class="notif-badge" style="display:none;">0</span>
+      </button>
+    </div>
+
+    <!-- แถบเมนูด้านซ้าย / แถบเมนูด้านล่างบนมือถือ -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-brand">
+        <div class="logo">SC</div>
+        <h1>Sport Circle</h1>
+      </div>
+      
+      <!-- เมนูฝั่งลูกค้า (User) -->
+      <div class="sidebar-section" id="navUser">
+        <div class="sidebar-section-label">เมนูผู้ใช้งาน</div>
+      </div>
+      <ul class="sidebar-nav" id="navUserLinks">
+        <li><a class="active" data-view="facilities" onclick="switchView('facilities')"><i data-lucide="layout-grid"></i> เลือกสนามกีฬา</a></li>
+        <li><a data-view="my-bookings" onclick="switchView('my-bookings')"><i data-lucide="calendar-check"></i> การจองของฉัน</a></li>
+        <li><a data-view="notifications" onclick="toggleNotificationDrawer()"><i data-lucide="bell"></i> แจ้งเตือน <span class="notif-menu-badge" id="notifMenuBadgeUser" style="display:none;">0</span></a></li>
+        <li><a data-view="history" onclick="switchView('history')"><i data-lucide="clock"></i> ประวัติการใช้งาน</a></li>
+        <li><a data-view="profile" onclick="switchView('profile')"><i data-lucide="user-cog"></i> โปรไฟล์</a></li>
+      </ul>
+      
+      <!-- เมนูฝั่งเจ้าของสนาม / แอดมิน (Owner / Admin) -->
+      <div class="sidebar-section" id="navAdmin" style="display:none">
+        <div class="sidebar-section-label">ระบบจัดการสนาม</div>
+      </div>
+      <ul class="sidebar-nav" id="navAdminLinks" style="display:none">
+        <li><a data-view="dashboard" onclick="switchView('dashboard')"><i data-lucide="bar-chart-3"></i> แดชบอร์ด</a></li>
+        <li><a data-view="notifications" onclick="toggleNotificationDrawer()"><i data-lucide="bell"></i> แจ้งเตือน <span class="notif-menu-badge" id="notifMenuBadgeAdmin" style="display:none;">0</span></a></li>
+        <li><a data-view="manage-facilities" onclick="switchView('manage-facilities')"><i data-lucide="settings"></i> จัดการสนาม</a></li>
+        <li><a data-view="payments" onclick="switchView('payments')"><i data-lucide="credit-card"></i> ตรวจสอบการชำระเงิน</a></li>
+        <li><a data-view="slots" onclick="switchView('slots')"><i data-lucide="lock"></i> จัดการตารางเวลา</a></li>
+        <li><a data-view="profile" onclick="switchView('profile')"><i data-lucide="user-cog"></i> โปรไฟล์</a></li>
+      </ul>
+
+      <!-- เมนูฝั่งพนักงาน (Staff) -->
+      <div class="sidebar-section" id="navStaff" style="display:none">
+        <div class="sidebar-section-label">จุดบริการหน้าสนาม</div>
+      </div>
+      <ul class="sidebar-nav" id="navStaffLinks" style="display:none">
+        <li><a data-view="scanner" onclick="switchView('scanner')"><i data-lucide="scan-line"></i> สแกนเช็คอิน</a></li>
+        <li><a data-view="notifications" onclick="toggleNotificationDrawer()"><i data-lucide="bell"></i> แจ้งเตือน <span class="notif-menu-badge" id="notifMenuBadgeStaff" style="display:none;">0</span></a></li>
+        <li><a data-view="payments" onclick="switchView('payments')"><i data-lucide="credit-card"></i> ตรวจสอบการชำระเงิน</a></li>
+        <li><a data-view="profile" onclick="switchView('profile')"><i data-lucide="user-cog"></i> โปรไฟล์</a></li>
+      </ul>
+
+      <div class="sidebar-user" style="justify-content: space-between; align-items: center; cursor: pointer;" onclick="switchView('profile')">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="avatar" id="userAvatar">ผู้</div>
+          <div class="user-info">
+            <div class="name" id="userName">ผู้ใช้งาน</div>
+            <div class="role" id="userRole">ผู้ดูแลระบบ</div>
+          </div>
+        </div>
+        <button onclick="event.stopPropagation(); handleLogout()" style="background: none; border: none; color: var(--error); cursor: pointer; padding: 4px;" title="ออกจากระบบ">
+          <i data-lucide="log-out" width="18" height="18"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- พื้นที่เนื้อหาหลัก -->
+    <main class="main-content">
+      
+      <!-- VIEW: เลือกสนามกีฬา -->
+      <div class="view active" id="view-facilities">
+        <div class="page-header">
+          <h2>ค้นหาและจองสนามกีฬา</h2>
+          <p>เลือกสนามกีฬาและช่วงเวลาที่คุณต้องการเข้าใช้บริการ</p>
+        </div>
+        <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="filter-chip active" onclick="filterFacilities(this, 'all')">กีฬาทั้งหมด</button>
+            <button class="filter-chip" onclick="filterFacilities(this, 'football')">ฟุตบอล</button>
+            <button class="filter-chip" onclick="filterFacilities(this, 'badminton')">แบดมินตัน</button>
+            <button class="filter-chip" onclick="filterFacilities(this, 'basketball')">บาสเกตบอล</button>
+            <button class="filter-chip" onclick="filterFacilities(this, 'futsal')">ฟุตซอล</button>
+            <button class="filter-chip" onclick="filterFacilities(this, 'volleyball')">วอลเลย์บอล</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; background:var(--surface); padding:6px 14px; border-radius:20px; border:1px solid var(--border);">
+            <span style="font-size:0.82rem; font-weight:600; color:var(--text-secondary); white-space:nowrap;">📍 จังหวัด:</span>
+            <select id="browseProvinceFilter" onchange="filterByProvince(this.value)" style="border:none; background:transparent; font-size:0.85rem; font-weight:600; color:var(--text); outline:none; cursor:pointer; min-width:160px;">
+              <option value="all">ทุกจังหวัด</option>
+            </select>
+          </div>
+        </div>
+        <div class="facilities-grid" id="facilitiesGrid"></div>
+      </div>
+
+      <!-- VIEW: หน้าทำการจองสนาม -->
+      <div class="view" id="view-booking">
+        <div class="page-header" style="margin-bottom:16px">
+          <a style="font-size:0.88rem; color:var(--primary); cursor:pointer; text-decoration:none; font-weight:600" onclick="switchView('facilities')">← ย้อนกลับไปหน้ารายการสนาม</a>
+        </div>
+        <div class="booking-detail">
+          <div class="booking-left">
+            <div class="facility-slider-container" style="position: relative; border-radius: var(--radius-lg); width: 100%; aspect-ratio: 16 / 9; min-height: 240px; max-height: 520px; overflow: hidden; margin-bottom: 20px; background: #2a2a2a; box-shadow: var(--shadow-sm);">
+               <div id="bookingImageSlider" style="display: flex; width: 100%; height: 100%; transition: transform 0.4s ease-in-out;"></div>
+               <button onclick="moveFacilitySlider(-1)" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; z-index: 2;">‹</button>
+               <button onclick="moveFacilitySlider(1)" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; z-index: 2;">›</button>
+               <div id="sliderDots" style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 2;"></div>
+            </div>
+
+            <h2 id="bookingTitle" style="margin-bottom: 10px; font-size: 1.65rem; font-weight: 800;">ชื่อสนามกีฬา</h2>
+            <div id="bookingMeta" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;"></div>
+
+            <div class="booking-facility-details" style="margin: 16px 0 20px 0; padding: 16px; background: #fafafa; border-radius: 12px; border: 1px solid #eee;">
+              <h4 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #333;">รายละเอียดสนาม</h4>
+              <p id="bookingDescription" style="margin: 0; color: #666; font-size: 0.9rem; line-height: 1.6;">-</p>
+              
+              <h4 style="margin: 14px 0 8px 0; font-size: 0.95rem; color: #333;">สิ่งอำนวยความสะดวก</h4>
+              <div id="bookingAmenities" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+
+              <div id="bookingMapContainer" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #ddd; display: none;"></div>
+            </div>
+
+            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:6px">1. เลือกวันที่ต้องการเข้าใช้บริการ</h4>
+            <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:16px; margin-bottom:20px">
+              <div class="calendar-header">
+                <button onclick="changeMonth(-1)">‹</button>
+                <h4 id="calendarMonth">ตุลาคม 2026</h4>
+                <button onclick="changeMonth(1)">›</button>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+
+            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:4px">2. เลือกช่วงเวลาที่ว่าง</h4>
+            <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:8px">สามารถแตะเลือกได้ 1 ช่วงเวลา หรือหลายช่วงเวลาต่อเนื่องกัน</p>
+            <div class="time-slots-grid" id="timeSlotsGrid"></div>
+          </div>
+          
+          <div class="booking-summary">
+            <h3 style="margin-top:0;">สรุปรายการจองสนาม</h3>
+            <div class="summary-row">
+              <span class="label">สนามกีฬา</span>
+              <span class="value" id="sumFacility">-</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">วันที่จอง</span>
+              <span class="value" id="sumDate">กรุณาเลือกวันที่</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">ช่วงเวลา</span>
+              <span class="value" id="sumTime">กรุณาเลือกเวลา</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">ระยะเวลารวม</span>
+              <span class="value" id="sumDuration">-</span>
+            </div>
+
+            <div id="bookingAddonsSection" style="display:none; margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--border-light);">
+              <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">📦 อุปกรณ์เสริม (เช่า/ซื้อ)</h4>
+              <div id="bookingAddonsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            
+            <div class="total-row" style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-weight:700;">
+              <span>ยอดชำระสุทธิ</span>
+              <span id="sumTotal" style="color:var(--primary); font-size:1.25rem;">฿0</span>
+            </div>
+
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--border-light);">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 0.85rem; font-weight: 600;">ชื่อ - นามสกุลผู้จอง <span style="color:red;">*</span></label>
+              <input type="text" id="bookingCustomerName" placeholder="เช่น สมชาย ใจดี" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label style="font-size: 0.85rem; font-weight: 600;">เบอร์โทรศัพท์ติดต่อ <span style="color:red;">*</span></label>
+              <input type="tel" id="bookingCustomerPhone" placeholder="เช่น 0812345678" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+            </div>
+
+            <div id="paymentInfoBox" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; font-size: 0.85rem;">
+              <h4 style="margin: 0 0 8px 0; font-size: 0.85rem; color: #333;">บัญชีสำหรับโอนเงิน</h4>
+              <p style="margin: 0 0 4px 0; color: #555;">ธนาคาร/พร้อมเพย์: <strong id="displayBankName">-</strong></p>
+              <p style="margin: 0 0 4px 0; color: #555;">เลขบัญชี: <strong id="displayBankAccount">-</strong></p>
+              <p style="margin: 0 0 4px 0; color: #555;">ชื่อบัญชี: <strong id="displayAccountName">-</strong></p>
+              <p style="margin: 8px 0 0 0; color: #d32f2f; font-weight: 700; font-size: 0.95rem; text-align: center;">ยอดที่ต้องโอน: <span id="displayTransferAmount">฿0</span></p>
+            </div>
+
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:8px;">อัปโหลดสลิปโอนเงิน <span style="color:red;">*</span></label>
+            <div class="upload-area" id="slipUploadBox" onclick="document.getElementById('slipUpload').click()">
+              <i data-lucide="upload-cloud" width="24" height="24"></i>
+              <p style="margin:4px 0 0; font-size:0.85rem;">คลิกเพื่อเลือกรูปสลิปโอนเงิน</p>
+              <p style="margin:2px 0 0; font-size:0.75rem; color:var(--text-tertiary);">รองรับไฟล์ PNG, JPG ขนาดไม่เกิน 5MB</p>
+            </div>
+            <input type="file" id="slipUpload" style="display:none" accept="image/*" onchange="handleSlipSelect(event)">
+
+            <button id="confirmBookingBtn" class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 12px; font-size: 1rem; font-weight: 600; border-radius: 8px;" onclick="confirmBooking()">
+              ยืนยันการจองสนาม
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: การจองของฉัน -->
+      <div class="view" id="view-my-bookings">
+        <div class="page-header">
+          <h2>การจองของฉัน</h2>
+          <p>รายการจองที่กำลังจะมาถึงและตั๋วเข้าใช้บริการสนาม</p>
+        </div>
+        <div id="myBookingsList" class="booking-list"></div>
+      </div>
+
+      <!-- VIEW: ประวัติการใช้งาน -->
+      <div class="view" id="view-history">
+        <div class="page-header">
+          <h2>ประวัติการเข้าใช้บริการ</h2>
+          <p>รายการจองที่เข้าใช้งานเสร็จสิ้นแล้ว</p>
+        </div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW: แดชบอร์ดเจ้าของสนาม & รายงานสถิติ (Court Owner View โฉมใหม่)
+           =================================================================== -->
+      <div class="view" id="view-dashboard">
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2>แดชบอร์ดบริหารจัดการสนามและรายงานสถิติ</h2>
+            <p>ภาพรวมผู้ใช้บริการรายวัน ตารางสถานะทุกคอร์ทแบบ Real-time และรายงานรายได้ประจำเดือน/ปี</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span style="background:#dcfce7; color:#15803d; padding:6px 12px; border-radius:20px; font-size:0.78rem; font-weight:700;">● อัปเดตข้อมูลแบบ Real-time</span>
+            <button type="button" class="btn btn-secondary" onclick="renderDashboardStats()" style="padding:8px 14px; font-size:0.82rem;">🔄 รีเฟรชข้อมูล</button>
+          </div>
+        </div>
+
+        <!-- 1. แถบตัวกรองรายงาน (รายวัน / รายเดือน / รายปี / เลือกสนาม) -->
+        <div class="dash-filter-card">
+          <div class="form-group" style="margin-bottom:0; flex:1.2; min-width:190px;">
+            <label>รูปแบบรายงานสถิติ</label>
+            <select id="dashReportPeriodType" onchange="handleReportPeriodChange()">
+              <option value="daily">📅 รายงานประจำวัน (วันนี้)</option>
+              <option value="monthly" selected>📊 รายงานสรุปประจำเดือน</option>
+              <option value="yearly">📈 รายงานสรุปประจำปี</option>
+              <option value="custom">🔍 กำหนดช่วงวันที่เอง</option>
+              <option value="all">🗂️ ข้อมูลทั้งหมดตั้งแต่เปิดระบบ</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="dashDailyPickerWrap" style="margin-bottom:0; flex:1; min-width:160px; display:none;">
+            <label>เลือกวันที่ต้องการดูตาราง/สถิติ</label>
+            <input type="date" id="dashRealtimeDate" onchange="renderDashboardStats()">
+          </div>
+
+          <div class="form-group" id="dashMonthPickerWrap" style="margin-bottom:0; flex:1; min-width:150px;">
+            <label>เลือกเดือน</label>
+            <select id="dashReportMonth" onchange="renderDashboardStats()">
+              <option value="01">มกราคม</option>
+              <option value="02">กุมภาพันธ์</option>
+              <option value="03">มีนาคม</option>
+              <option value="04">เมษายน</option>
+              <option value="05">พฤษภาคม</option>
+              <option value="06">มิถุนายน</option>
+              <option value="07">กรกฎาคม</option>
+              <option value="08">สิงหาคม</option>
+              <option value="09">กันยายน</option>
+              <option value="10" selected>ตุลาคม</option>
+              <option value="11">พฤศจิกายน</option>
+              <option value="12">ธันวาคม</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="dashYearPickerWrap" style="margin-bottom:0; flex:0.8; min-width:120px;">
+            <label>เลือกปี (ค.ศ. / พ.ศ.)</label>
+            <select id="dashReportYear" onchange="renderDashboardStats()">
+              <option value="2026" selected>2026 (2569)</option>
+              <option value="2025">2025 (2568)</option>
+              <option value="2027">2027 (2570)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="dashCustomStartWrap" style="margin-bottom:0; flex:1; min-width:145px; display:none;">
+            <label>ตั้งแต่วันที่</label>
+            <input type="date" id="dashFilterStartDate" onchange="renderDashboardStats()">
+          </div>
+          <div class="form-group" id="dashCustomEndWrap" style="margin-bottom:0; flex:1; min-width:145px; display:none;">
+            <label>ถึงวันที่</label>
+            <input type="date" id="dashFilterEndDate" onchange="renderDashboardStats()">
+          </div>
+
+          <div class="form-group" style="margin-bottom:0; flex:1.2; min-width:190px;">
+            <label>กรองเฉพาะสนาม</label>
+            <select id="dashFilterFacility" onchange="renderDashboardStats()">
+              <option value="all">🏟️ รวมทุกสนามในความดูแล</option>
+            </select>
+          </div>
+
+          <button type="button" class="btn btn-secondary" onclick="resetDashboardFilters()" style="height:42px;">ล้างตัวกรอง</button>
+        </div>
+
+        <!-- 2. การ์ดสรุปสถิติ 6 มิติ (รวมสถิติการยกเลิก และ รายได้อุปกรณ์เสริม) -->
+        <div class="dash-kpi-grid">
+          <div class="dash-kpi-card">
+            <span class="kpi-label" id="dashRevenueLabel">รายได้สุทธิ (ตามช่วงที่เลือก)</span>
+            <h3 id="dashTotalRevenue" style="color: #16a34a;">฿0</h3>
+            <div class="kpi-sub" id="dashCompletedSubText">เข้าใช้งานแล้ว 0 ชม.</div>
+          </div>
+          <div class="dash-kpi-card">
+            <span class="kpi-label">รายได้อุปกรณ์เสริม (เช่า/ซื้อ)</span>
+            <h3 id="dashAddonRevenue" style="color: #0284c7;">฿0</h3>
+            <div class="kpi-sub" id="dashAddonSubText">เช่า 0 ชิ้น | ซื้อ 0 ชิ้น</div>
+          </div>
+          <div class="dash-kpi-card">
+            <span class="kpi-label">ผู้ใช้บริการวันนี้ (Real-time)</span>
+            <h3 id="dashTodayUsersCount" style="color: #2563eb;">0 ราย</h3>
+            <div class="kpi-sub" id="dashTodaySlotsSubText">จองวันนี้รวม 0 ช่วงเวลา</div>
+          </div>
+          <div class="dash-kpi-card">
+            <span class="kpi-label">จำนวนการจองสำเร็จ</span>
+            <h3 id="dashTotalBookings">0 ชม.</h3>
+            <div class="kpi-sub" id="dashTotalBillsSubText">จากทั้งหมด 0 บิล</div>
+          </div>
+          <div class="dash-kpi-card">
+            <span class="kpi-label">รอตรวจสอบสลิป</span>
+            <h3 id="dashPendingBookings" style="color: #d97706;">0 ชม.</h3>
+            <div class="kpi-sub">คลิกที่สล็อตสีส้มในตารางเพื่อตรวจ</div>
+          </div>
+          <div class="dash-kpi-card">
+            <span class="kpi-label">สถิติการยกเลิก / ปฏิเสธ</span>
+            <h3 id="dashCancelledBookings" style="color: #dc2626;">0 ครั้ง</h3>
+            <div class="kpi-sub" id="dashCancelRateSubText">อัตราการยกเลิก 0%</div>
+          </div>
+        </div>
+
+        <!-- 3. ตารางสถานะทุกสนามรายชั่วโมงแบบ Real-time (Multi-Court Status Matrix) -->
+        <div class="dash-section-card matrix-card-container">
+          <div class="matrix-card-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:var(--text);" id="matrixSectionTitle">ตารางจองและสถานะสนามวันนี้</h3>
+                <span class="matrix-realtime-badge">Real-time</span>
+              </div>
+              <p style="margin:4px 0 0 0; font-size:0.85rem; color:var(--text-secondary);">คลิกที่สล็อตเวลาเพื่อดูรายละเอียด เพิ่มอุปกรณ์เสริม เช็กอินลูกค้า หรือจัดการช่องที่ถูกยกเลิก</p>
+            </div>
+            
+            <!-- ตัวเลือกวันที่ และ ตัวเลือกช่วงเวลา -->
+            <div class="matrix-header-controls">
+              <div class="matrix-timerange-pills">
+                <button type="button" class="timerange-pill active" id="pillRangeEvening" onclick="setMatrixTimeRange('evening', this)">16:00 - 22:00 (ช่วงบ่าย-ค่ำ)</button>
+                <button type="button" class="timerange-pill" id="pillRangeMorning" onclick="setMatrixTimeRange('morning', this)">08:00 - 16:00 (ช่วงเช้า-บ่าย)</button>
+                <button type="button" class="timerange-pill" id="pillRangeAll" onclick="setMatrixTimeRange('all', this)">ทั้งวัน (06:00 - 23:00)</button>
+              </div>
+
+              <div class="matrix-date-nav">
+                <button type="button" class="btn btn-secondary btn-icon" onclick="changeMatrixDate(-1)" title="วันก่อนหน้า" style="padding:6px 10px;">◀</button>
+                <button type="button" class="btn btn-secondary" onclick="setMatrixDateToday()" style="font-weight:600; font-size:0.82rem; padding:6px 12px;">📅 วันนี้</button>
+                <button type="button" class="btn btn-secondary btn-icon" onclick="changeMatrixDate(1)" title="วันถัดไป" style="padding:6px 10px;">▶</button>
+                <input type="date" id="dashMatrixDatePicker" onchange="syncMatrixDate(this.value)" class="matrix-date-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- แถบ Legend และ Dropdown กรองสนาม -->
+          <div class="matrix-legend-bar">
+            <div class="matrix-legend-items">
+              <span class="matrix-legend-item"><span class="legend-dot dot-booked"></span> จองแล้ว</span>
+              <span class="matrix-legend-item"><span class="legend-dot dot-pending"></span> รอตรวจสลิป</span>
+              <span class="matrix-legend-item"><span class="legend-dot dot-available"></span> สนามว่าง</span>
+              <span class="matrix-legend-item"><span class="legend-dot dot-cancelled"></span> ยกเลิก</span>
+            </div>
+
+            <div class="matrix-court-filter-wrap">
+              <select id="dashMatrixCourtFilter" onchange="handleMatrixCourtFilterChange(this.value)" class="matrix-court-select">
+                <option value="all">แสดงสนามทั้งหมด</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ตาราง Matrix -->
+          <div class="matrix-table-scroll-wrap">
+            <div id="dashMultiCourtMatrix">
+              <div style="text-align:center; padding:32px; color:var(--text-tertiary);">กำลังโหลดตารางจองและสถานะสนามแบบ Real-time...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. ข้อมูลสต็อกสินค้าและยอดเช่า/ซื้ออุปกรณ์แยกตามสนาม (แทนที่ระบบจัดการด่วนเดิม) -->
+        <div class="dash-section-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-light);">
+            <div>
+              <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:var(--text);">📦 ข้อมูลสต็อกสินค้าและยอดเช่า/ซื้ออุปกรณ์เสริม</h3>
+              <p style="margin:4px 0 0 0; font-size:0.82rem; color:var(--text-secondary);">แสดงยอดการเช่า/ซื้อตามช่วงเวลาที่เลือกด้านบน และปรับเพิ่ม/ลดจำนวนสต็อกคงเหลือได้ทันที (หากต้องการเพิ่มรายการสินค้าใหม่ ให้ไปที่หน้าจัดการสนาม)</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <select id="dashEquipmentFacilityFilter" onchange="renderDashboardEquipmentSection()" style="padding:7px 14px; border:1.5px solid var(--border); border-radius:999px; font-size:0.84rem; font-weight:700; color:var(--text); background:#fff; outline:none; cursor:pointer; min-width:200px;">
+                <option value="all">🏟️ แสดงอุปกรณ์ทุกสนาม</option>
+              </select>
+              <button type="button" class="btn btn-secondary" onclick="switchView('manage-facilities')" style="padding:7px 14px; font-size:0.8rem; border-radius:999px;">
+                ⚙️ ไปหน้าจัดการสนาม (เพิ่มสินค้าใหม่)
+              </button>
+            </div>
+          </div>
+          <div id="dashEquipmentStockList">
+            <div style="text-align:center; padding:24px; color:var(--text-tertiary);">กำลังโหลดข้อมูลอุปกรณ์เสริม...</div>
+          </div>
+        </div>
+
+        <!-- 5. ตารางสรุปรายงานประจำเดือน/ประจำปี แยกตามสนาม + กราฟรายได้ -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="dash-section-card" style="margin-bottom:0;">
+            <h3 style="margin:0 0 12px 0; font-size:1.02rem;">📑 ตารางสรุปรายงานแยกตามสนามกีฬา</h3>
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ชื่อสนาม</th>
+                    <th>จองสำเร็จ</th>
+                    <th>ยกเลิก</th>
+                    <th>รายได้สุทธิ</th>
+                  </tr>
+                </thead>
+                <tbody id="dashReportSummaryTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-section-card" style="margin-bottom:0;">
+            <h3 style="margin:0 0 12px 0; font-size:1.02rem;">📊 กราฟรายได้แยกตามประเภทกีฬา</h3>
+            <div style="position: relative; height: 260px; width: 100%;">
+              <canvas id="revenueChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <span id="dashCompletedBookings" style="display:none;">0</span>
+      </div> <!-- 👈 ปิดแท็ก view-dashboard ครบสมบูรณ์ตรงนี้! -->
+
+      <!-- VIEW: จัดการสนามกีฬา -->
+      <div class="view" id="view-manage-facilities">
+        <div class="page-header flex items-center" style="justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2>จัดการข้อมูลสนามกีฬาและอุปกรณ์</h2>
+            <p>เพิ่ม แก้ไข หรือจัดการสต็อกอุปกรณ์เสริมของแต่ละสนาม</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddFacilityModal()"><i data-lucide="plus" width="16" height="16"></i> เพิ่มสนามกีฬาใหม่</button>
+        </div>
+        <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); overflow:hidden">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ชื่อสนามกีฬา</th>
+                <th>ประเภทกีฬา</th>
+                <th>ราคา/ชั่วโมง</th>
+                <th>สถานะ</th>
+                <th>การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="facilitiesTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: ตรวจสอบการชำระเงิน -->
+      <div class="view" id="view-payments">
+        <div class="page-header">
+          <h2>ตรวจสอบสลิปและอนุมัติการจอง</h2>
+          <p>ตรวจสอบหลักฐานการโอนเงิน อนุมัติรายการ หรือเช็คอินลูกค้าเข้าสนาม</p>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <!-- 💡 1. ปรับแท็บหลักให้เหลือแค่ 3 แท็บ (รอดำเนินการ / อนุมัติแล้ว / ยกเลิก) -->
+          <div class="payment-tabs" style="display: flex; gap: 8px;">
+            <button id="tab-pending" onclick="filterPayments('pending')" class="btn" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer;">รอตรวจสอบสลิป</button>
+            <button id="tab-approved" onclick="filterPayments('approved')" class="btn" style="background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); padding: 6px 16px; border-radius: 6px; cursor: pointer;">อนุมัติเรียบร้อย (ทั้งหมด)</button>
+            <button id="tab-rejected" onclick="filterPayments('rejected')" class="btn" style="background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); padding: 6px 16px; border-radius: 6px; cursor: pointer;">ถูกยกเลิก/ปฏิเสธ</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- 💡 2. เพิ่มตัวกรองสถานะย่อย (ซ่อนไว้ เริ่มทำงานเมื่ออยู่แท็บ อนุมัติเรียบร้อย) -->
+            <div id="approvedSubFilter" style="display:none; align-items:center; gap:10px; background:#f0fdf4; padding:6px 14px; border-radius:8px; border:1px solid #bbf7d0;">
+               <label style="font-size:0.8rem; font-weight:700; color:#16a34a; margin:0;">กรองสถานะ:</label>
+               <select id="paymentSubFilterStatus" onchange="renderPaymentsTable()" style="padding:4px 8px; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#15803d; background:#ffffff; outline:none; font-weight:600;">
+                 <option value="all">แสดงทั้งหมด</option>
+                 <option value="waiting_checkin">รอเช็คอิน (ยังไม่ได้ใช้)</option>
+                 <option value="completed">เข้าใช้งานแล้ว (เช็คอินครบ)</option>
+               </select>
+            </div>
+
+            <!-- ดรอปดาวน์ตัวกรองสนามเดิม -->
+            <div style="display:flex; align-items:center; gap:10px; background:var(--surface); padding:8px 14px; border-radius:8px; border:1px solid var(--border-light);">
+              <label style="font-size:0.82rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; margin:0;">เลือกสนาม:</label>
+              <select id="paymentFilterFacility" onchange="renderPaymentsTable()" style="padding:6px 12px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; min-width:180px; background:var(--bg); outline:none;">
+                <option value="all">🏟️ แสดงทุกสนาม</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+
+        <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); overflow:hidden;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>รหัสบิล</th>
+                <th>ข้อมูลผู้จอง</th>
+                <th>สนามและเวลาที่จอง</th>
+                <th>ยอดชำระ</th>
+                <th>สลิปโอนเงิน</th>
+                <th>สถานะ</th>
+                <th>การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: Manage Facilities -->
+      <div class="view" id="view-manage-facilities">
+        <div class="page-header flex items-center" style="justify-content:space-between">
+          <div>
+            <h2>Manage Facilities</h2>
+            <p>Add, edit, or remove sports facilities</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddFacilityModal()"><i data-lucide="plus" width="16" height="16"></i> Add Facility</button>
+        </div>
+        <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); overflow:hidden">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Facility</th>
+                <th>Sport</th>
+                <th>Price/hr</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="facilitiesTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: Payment Verification -->
+      <div class="view" id="view-payments">
+        <div class="page-header">
+          <h2>Payment Verification</h2>
+          <p>Review and approve booking payments</p>
+        </div>
+
+        <!-- แท็บสลับดูสถานะ + ตัวกรองสนาม -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div class="payment-tabs" style="display: flex; gap: 8px;">
+            <button id="tab-pending" onclick="filterPayments('pending')" class="btn" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer;">Pending (รอตรวจสอบ)</button>
+            <button id="tab-approved" onclick="filterPayments('approved')" class="btn" style="background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); padding: 6px 16px; border-radius: 6px; cursor: pointer;">Approved (อนุมัติเรียบร้อย)</button>
+            <button id="tab-rejected" onclick="filterPayments('rejected')" class="btn" style="background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); padding: 6px 16px; border-radius: 6px; cursor: pointer;">Rejected (ถูกปฏิเสธ)</button>
+            <button id="tab-completed" onclick="filterPayments('completed')" class="btn" style="background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); padding: 6px 16px; border-radius: 6px; cursor: pointer;">Completed (เช็คอินแล้ว)</button>
+          </div>
+
+          <!-- 💡 ดรอปดาวน์ตัวกรองสนามในหน้า Payments -->
+          <div style="display:flex; align-items:center; gap:10px; background:var(--surface); padding:8px 14px; border-radius:8px; border:1px solid var(--border-light);">
+            <label style="font-size:0.82rem; font-weight:600; color:var(--text-secondary); white-space:nowrap; margin:0;">เลือกสนาม:</label>
+            <select id="paymentFilterFacility" onchange="renderPaymentsTable()" style="padding:6px 12px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; min-width:210px; background:var(--bg);">
+              <option value="all">🏟️ แสดงทุกสนาม (All Facilities)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md);">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>BOOKING ID</th>
+                <th>USER</th>
+                <th>FACILITY</th>
+                <th>AMOUNT</th>
+                <th>SLIP</th>
+                <th>STATUS</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: Slot Management (ศูนย์ควบคุมตารางสนาม + จองหน้างาน + ล็อกเวลา) -->
+      <div class="view" id="view-slots">
+        <div class="page-header">
+          <h2>Slot & Walk-in Management</h2>
+          <p>ตารางคุมเวลาสนาม เช็คอินลูกค้า ลงคิวจองทางโทรศัพท์ และล็อกเวลาปิดปรับปรุง</p>
+        </div>
+
+        <!-- แถบเลือกสนามและวันที่ -->
+        <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:16px; margin-bottom:20px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+          <div class="form-group" style="margin-bottom:0; flex:1; min-width:220px;">
+            <label>เลือกสนามกีฬา (Facility)</label>
+            <select id="slotManageFacility" onchange="loadSlotManagementData()"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0; flex:1; min-width:180px;">
+            <label>เลือกวันที่ (Date)</label>
+            <input type="date" id="slotManageDate" onchange="loadSlotManagementData()">
+          </div>
+          <button class="btn btn-secondary" onclick="loadSlotManagementData()" style="height:42px;">🔄 รีเฟรชตาราง</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1.35fr 1fr; gap:20px; align-items:start;">
+          
+          <!-- ฝั่งซ้าย: ตารางเวลาประจำวัน (กดเช็คอิน / ปลดล็อกจากตรงนี้ได้เลย) -->
+          <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h3 style="font-size:1rem; font-weight:600; margin:0;">📅 ตารางเวลาประจำวัน (06:00 - 22:00)</h3>
+              <span style="font-size:0.78rem; color:var(--text-secondary);">กดเช็คอินลูกค้า หรือปลดล็อกเวลาได้ทันที</span>
+            </div>
+            <div id="adminDailyScheduleList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+
+          <!-- ฝั่งขวา: ฟอร์มลงคิวลูกค้าโทรจอง & ฟอร์มล็อกเวลา -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            
+            <!-- กล่องที่ 1: จองให้ลูกค้า (โทรจอง / Walk-in) -->
+            <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:20px; border-top:4px solid var(--primary);">
+              <h3 style="font-size:0.98rem; font-weight:600; margin-bottom:4px;">📞 ลงรายการจองให้ลูกค้า (โทรจอง / Walk-in)</h3>
+              <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:14px;">บันทึกคิวเข้าตารางทันที (สถานะ Approved พร้อมเช็คอิน)</p>
+              
+              <div class="form-group">
+                <label>ชื่อ-นามสกุล ลูกค้า <span style="color:red">*</span></label>
+                <input type="text" id="walkinCustomerName" placeholder="เช่น คุณสมศักดิ์ (โทรจอง)">
+              </div>
+              <div class="form-group">
+                <label>เบอร์โทรศัพท์ <span style="color:red">*</span></label>
+                <input type="tel" id="walkinCustomerPhone" placeholder="เช่น 0812345678">
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                  <label>เวลาเริ่ม</label>
+                  <select id="walkinStartTime"></select>
+                </div>
+                <div class="form-group">
+                  <label>เวลาสิ้นสุด</label>
+                  <select id="walkinEndTime"></select>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-block" onclick="submitAdminWalkinBooking()">+ บันทึกการจองให้ลูกค้า</button>
+            </div>
+
+            <!-- กล่องที่ 2: ล็อกเวลาสนาม (Block Slot) -->
+            <div style="background:var(--surface); border:1px solid var(--border-light); border-radius:var(--radius-md); padding:20px; border-top:4px solid #f59e0b;">
+              <h3 style="font-size:0.98rem; font-weight:600; margin-bottom:4px;">🔒 ล็อกเวลาสนาม (Block Time Slots)</h3>
+              <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:14px;">ปิดกั้นช่วงเวลาไม่ให้ลูกค้ากดจองผ่านหน้าเว็บ</p>
+              
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                  <label>ตั้งแต่เวลา</label>
+                  <select id="blockStartTime"></select>
+                </div>
+                <div class="form-group">
+                  <label>ถึงเวลา</label>
+                  <select id="blockEndTime"></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>สาเหตุการล็อก (Reason)</label>
+                <select id="blockReason">
+                  <option value="ปิดปรับปรุง (Maintenance)">ปิดปรับปรุง (Maintenance)</option>
+                  <option value="จัดกิจกรรมพิเศษ (Event Reserved)">จัดกิจกรรมพิเศษ (Event Reserved)</option>
+                  <option value="พักสนาม (Staff / Court Break)">พักสนาม (Staff / Court Break)</option>
+                </select>
+              </div>
+              <button class="btn btn-block" style="background:#f59e0b; color:white;" onclick="submitTimeBlock()">🔒 ล็อกช่วงเวลานี้</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: User Profile & Account Settings (สมดุล 2 คอลัมน์บนคอม + รองรับมือถือ + ยืนยันรหัสผ่านเดิม) -->
+      <div class="view" id="view-profile">
+        <div style="max-width: 980px; margin: 0 auto;">
+          <div class="page-header">
+            <h2>โปรไฟล์และการตั้งค่าบัญชี</h2>
+            <p>แก้ไขข้อมูลส่วนตัว อีเมล รหัสผ่าน และออกจากระบบ</p>
+          </div>
+
+          <!-- การ์ดแสดงโปรไฟล์ปัจจุบัน + ปุ่ม Logout (เต็มความกว้างด้านบน) -->
+          <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; align-items: center; gap: 18px;">
+                            <div class="avatar-edit-wrap">
+                <div id="profilePageAvatar" style="width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(139,37,34,0.25);">U</div>
+                <button type="button" class="avatar-edit-btn" onclick="openAvatarPicker('profile')" title="เปลี่ยนรูปโปรไฟล์"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+                <input type="file" id="profileAvatarInput" accept="image/*" hidden onchange="handleProfileAvatarChange(this)">
+                <input type="file" id="profileAvatarCamera" accept="image/*" capture="user" hidden onchange="handleProfileAvatarChange(this)">
+              </div>
+              <div>
+                <h3 id="profilePageNameDisplay" style="margin: 0; font-size: 1.25rem; font-weight: 700;">User</h3>
+                <div id="profilePageEmailDisplay" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 2px;">user@email.com</div>
+                <span id="profilePageRoleBadge" style="display: inline-block; margin-top: 6px; background: var(--primary-lighter); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;">User</span>
+                <div><button type="button" id="profileAvatarRemoveBtn" class="avatar-remove-btn" style="display:none" onclick="removeProfileAvatar()">ลบรูปโปรไฟล์</button></div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-error" onclick="handleLogout()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
+              <i data-lucide="log-out" width="16" height="16"></i> ออกจากระบบ (Logout)
+            </button>
+          </div>
+
+          <!-- กริด 2 คอลัมน์ซ้าย-ขวาบนจอคอม และเรียงลงมา 1 คอลัมน์อัตโนมัติบนจอมือถือ -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: stretch;">
+            
+            <!-- คอลัมน์ซ้าย: ฟอร์มแก้ไขชื่อ เบอร์โทร และอีเมล -->
+            <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
+              <div>
+                <h3 style="margin: 0 0 18px 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light);">
+                  📝 แก้ไขข้อมูลส่วนตัว
+                </h3>
+                <div class="form-group">
+                  <label>ชื่อ - นามสกุล (Full Name)</label>
+                  <input type="text" id="profileEditName" placeholder="กรอกชื่อ-นามสกุล">
+                </div>
+                <div class="form-group">
+                  <label>เบอร์โทรศัพท์ (Phone)</label>
+                  <input type="tel" id="profileEditPhone" placeholder="เช่น 0812345678">
+                </div>
+                <div class="form-group">
+                  <label>อีเมล (Email)</label>
+                  <input type="email" id="profileEditEmail" placeholder="you@example.com">
+                </div>
+              </div>
+              <button type="button" id="saveProfileBtn" class="btn btn-primary btn-block" style="margin-top: 12px; padding: 12px;" onclick="saveProfileInfo()">
+                💾 บันทึกข้อมูลโปรไฟล์
+              </button>
+            </div>
+
+            <!-- คอลัมน์ขวา: ฟอร์มเปลี่ยนรหัสผ่าน (ต้องกรอกรหัสผ่านเดิมก่อน) -->
+            <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
+              <div>
+                <h3 style="margin: 0 0 18px 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light);">
+                  🔒 เปลี่ยนรหัสผ่าน (Change Password)
+                </h3>
+                <div class="form-group">
+                  <label>รหัสผ่านปัจจุบัน (Current Password) <span style="color: var(--error);">*</span></label>
+                  <input type="password" id="profileOldPassword" placeholder="กรอกรหัสผ่านเดิมเพื่อยืนยันตัวตน">
+                </div>
+                <div class="form-group">
+                  <label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร) <span style="color: var(--error);">*</span></label>
+                  <input type="password" id="profileNewPassword" placeholder="กรอกรหัสผ่านใหม่">
+                </div>
+                <div class="form-group">
+                  <label>ยืนยันรหัสผ่านใหม่อีกครั้ง <span style="color: var(--error);">*</span></label>
+                  <input type="password" id="profileConfirmPassword" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+                </div>
+              </div>
+              <button type="button" id="savePasswordBtn" class="btn btn-secondary btn-block" style="margin-top: 12px; padding: 12px; border-color: var(--primary); color: var(--primary); font-weight: 600;" onclick="changeUserPassword()">
+                🔑 ยืนยันการเปลี่ยนรหัสผ่าน
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Add Facility Modal -->
+  <div class="modal-overlay" id="addFacilityModal">
+    <div class="modal">
+      <h3>Add New Facility</h3>
+      
+      <!-- 1. ส่วนข้อมูลพื้นฐานของสนาม (ที่เผลอหายไป) -->
+      <div class="form-group">
+        <label>Facility Name</label>
+        <input type="text" id="addFieldName" placeholder="e.g. Football Field B">
+      </div>
+      <div class="form-group">
+        <label>Sport Type</label>
+        <select id="addFieldSport">
+          <option value="football">Football</option>
+          <option value="badminton">Badminton</option>
+          <option value="basketball">Basketball</option>
+          <option value="futsal">Futsal</option>
+          <option value="volleyball">Volleyball</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price per Hour (฿)</label>
+        <input type="number" id="addFieldPrice" placeholder="500">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="addFieldStatus">
+          <option value="available">Available</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+
+      <!-- 💡 เพิ่มช่องเลือกจังหวัด (77 จังหวัด) และลิงก์ Google Maps -->
+      <div class="form-group">
+        <label>จังหวัดที่ตั้งสนาม (Province) <span style="color:red">*</span></label>
+        <select id="addFieldProvince"></select>
+      </div>
+      <div class="form-group">
+        <label>ลิงก์พิกัดสนาม (Google Maps URL)</label>
+        <input type="url" id="addFieldMapUrl" placeholder="เช่น https://maps.app.goo.gl/... ">
+      </div>
+
+      <!-- 2. ส่วนบัญชีรับเงินของสนาม -->
+      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 15px;">
+        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem;">บัญชีรับเงินของสนาม</h4>
+        <div class="form-group">
+          <label style="font-size: 0.8rem;">ธนาคาร / พร้อมเพย์</label>
+          <select id="addFieldBankName">
+            <option value="">-- เลือกธนาคาร --</option>
+            <option value="PromptPay (พร้อมเพย์)">PromptPay (พร้อมเพย์)</option>
+            <option value="KBank (กสิกรไทย)">KBank (กสิกรไทย)</option>
+            <option value="SCB (ไทยพาณิชย์)">SCB (ไทยพาณิชย์)</option>
+            <option value="BBL (กรุงเทพ)">BBL (กรุงเทพ)</option>
+            <option value="KTB (กรุงไทย)">KTB (กรุงไทย)</option>
+            <option value="BAY (กรุงศรี)">BAY (กรุงศรี)</option>
+            <option value="TTB (ทหารไทยธนชาต)">TTB (ทหารไทยธนชาต)</option>
+            <option value="GSB (ออมสิน)">GSB (ออมสิน)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 0.8rem;">เลขบัญชี / เบอร์พร้อมเพย์</label>
+          <input type="text" id="addFieldBankAccount" placeholder="เช่น 012-3-45678-9 หรือ 0812345678">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 0.8rem;">ชื่อบัญชี</label>
+          <input type="text" id="addFieldAccountName" placeholder="เช่น นายสมชาย ใจดี">
+        </div>
+      </div>
+
+      <!-- 3. ส่วนรายละเอียดสนาม -->
+      <div class="form-group" style="margin-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 5px;">รายละเอียดสนาม (Description)</label>
+        <textarea id="newFacilityDesc" placeholder="กรอกรายละเอียดเกี่ยวกับสนาม..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; min-height: 80px;"></textarea>
+      </div>
+
+      <!-- 4. สิ่งอำนวยความสะดวก -->
+      <div class="form-group" style="margin-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; display: block;">สิ่งอำนวยความสะดวก (Amenities)</label>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="facilityAmenity" value="ที่จอดรถยนต์" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🚗 มีที่จอดรถยนต์</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="facilityAmenity" value="ห้องน้ำในตัว" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🚻 มีห้องน้ำในตัว</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="facilityAmenity" value="ร้านสะดวกซื้อใกล้ๆ" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🏪 ร้านสะดวกซื้อใกล้ๆ</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="facilityAmenity" value="อุปกรณ์ให้ยืม" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🏸 อุปกรณ์ให้ยืม</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 5. ส่วนอัปโหลดรูปภาพ -->
+      <div class="form-group">
+        <label>Facility Images (Max 4)</label>
+        <div class="upload-area" id="facilityImageUploadBox" onclick="document.getElementById('facilityImageUpload').click()" style="padding:20px; text-align: center;">
+          <i data-lucide="image" width="24" height="24"></i>
+          <p>Click to upload photos</p>
+          <p style="font-size:0.72rem; color:var(--text-tertiary); margin-top:4px">PNG, JPG up to 5MB (Max 4 images)</p>
+        </div>
+        <input type="file" id="facilityImageUpload" style="display:none" accept="image/*" multiple onchange="handleFacilityImagesSelect(event)">
+        <div id="facilityImagePreviewList" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content: center;"></div>
+      </div>
+
+      <div class="flex gap-8 mt-16">
+        <button class="btn btn-secondary" style="flex:1" onclick="closeModal('addFacilityModal')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" onclick="submitNewFacility()">Add Facility</button>
+      </div>
+    </div>
+  </div>
+      <!-- 🟢 Edit Facility Modal -->
+  <div class="modal-overlay" id="editFacilityModal">
+    <div class="modal">
+      <h3>Edit Facility</h3>
+      <input type="hidden" id="editFacilityId">
+      
+      <!-- 1. ส่วนข้อมูลพื้นฐานของสนาม -->
+      <div class="form-group">
+        <label>Facility Name</label>
+        <input type="text" id="editFieldName" placeholder="e.g. Football Field B">
+      </div>
+      <div class="form-group">
+        <label>Sport Type</label>
+        <select id="editFieldSport">
+          <option value="football">Football</option>
+          <option value="badminton">Badminton</option>
+          <option value="basketball">Basketball</option>
+          <option value="futsal">Futsal</option>
+          <option value="volleyball">Volleyball</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price per Hour (฿)</label>
+        <input type="number" id="editFieldPrice" placeholder="500">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="editFieldStatus">
+          <option value="available">Available</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+
+      <!-- 💡 เพิ่มช่องแก้ไขจังหวัด (77 จังหวัด) และลิงก์ Google Maps -->
+      <div class="form-group">
+        <label>จังหวัดที่ตั้งสนาม (Province) <span style="color:red">*</span></label>
+        <select id="editFieldProvince"></select>
+      </div>
+      <div class="form-group">
+        <label>ลิงก์พิกัดสนาม (Google Maps URL)</label>
+        <input type="url" id="editFieldMapUrl" placeholder="เช่น https://maps.app.goo.gl/... ">
+      </div>
+
+      <!-- 2. 💡 ส่วนบัญชีรับเงินของสนาม (ต้องมี!) -->
+      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 15px;">
+        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem;">บัญชีรับเงินของสนาม</h4>
+        <div class="form-group">
+          <label style="font-size: 0.8rem;">ธนาคาร / พร้อมเพย์</label>
+          <select id="editFieldBankName">
+            <option value="">-- เลือกธนาคาร --</option>
+            <option value="PromptPay (พร้อมเพย์)">PromptPay (พร้อมเพย์)</option>
+            <option value="KBank (กสิกรไทย)">KBank (กสิกรไทย)</option>
+            <option value="SCB (ไทยพาณิชย์)">SCB (ไทยพาณิชย์)</option>
+            <option value="BBL (กรุงเทพ)">BBL (กรุงเทพ)</option>
+            <option value="KTB (กรุงไทย)">KTB (กรุงไทย)</option>
+            <option value="BAY (กรุงศรี)">BAY (กรุงศรี)</option>
+            <option value="TTB (ทหารไทยธนชาต)">TTB (ทหารไทยธนชาต)</option>
+            <option value="GSB (ออมสิน)">GSB (ออมสิน)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 0.8rem;">เลขบัญชี / เบอร์พร้อมเพย์</label>
+          <input type="text" id="editFieldBankAccount" placeholder="เช่น 012-3-45678-9 หรือ 0812345678">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 0.8rem;">ชื่อบัญชี</label>
+          <input type="text" id="editFieldAccountName" placeholder="เช่น นายสมชาย ใจดี">
+        </div>
+      </div>
+
+      <!-- 3. ส่วนรายละเอียดสนาม (Description) -->
+      <div class="form-group" style="margin-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: block;">รายละเอียดสนาม (Description)</label>
+        <textarea id="editFieldDesc" placeholder="กรอกรายละเอียดเกี่ยวกับสนาม..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; min-height: 70px; resize: vertical;"></textarea>
+      </div>
+
+      <!-- 4. ส่วนสิ่งอำนวยความสะดวก (Amenities) -->
+      <div class="form-group" style="margin-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; display: block;">สิ่งอำนวยความสะดวก (Amenities)</label>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="editFacilityAmenity" value="ที่จอดรถยนต์" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🚗 มีที่จอดรถยนต์</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="editFacilityAmenity" value="ห้องน้ำในตัว" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🚻 มีห้องน้ำในตัว</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="editFacilityAmenity" value="ร้านสะดวกซื้อใกล้ๆ" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🏪 ร้านสะดวกซื้อใกล้ๆ</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" name="editFacilityAmenity" value="อุปกรณ์ให้ยืม" style="accent-color: #8B2522; width: 16px; height: 16px;">
+            <span>🏸 อุปกรณ์ให้ยืม</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 5. ส่วนจัดการรูปภาพสนามในหน้าแก้ไข -->
+      <div class="form-group" style="margin-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block;">Facility Images (Max 4)</label>
+        
+        <div class="upload-area" id="editFacilityImageUploadBox" onclick="document.getElementById('editFacilityImageUpload').click()" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; background: #fafafa;">
+          <i data-lucide="image" width="24" height="24" style="color: #888;"></i>
+          <p style="margin: 4px 0 0; font-size: 0.85rem; color: #555;">Click to upload photos</p>
+          <p style="margin: 2px 0 0; font-size: 0.72rem; color: #999;">PNG, JPG up to 5MB (Max 4 images)</p>
+        </div>
+
+        <input type="file" id="editFacilityImageUpload" style="display:none" accept="image/*" multiple onchange="handleEditFacilityImages(event)">
+        
+        <!-- กล่องพรีวิวรูปที่สามารถกดลบ (x) ได้ -->
+        <div id="editFacilityImagePreviewList" style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;"></div>
+      </div>
+
+      <div class="flex gap-8 mt-16">
+        <button class="btn btn-secondary" style="flex:1" onclick="closeModal('editFacilityModal')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" onclick="submitEditFacility()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎫 Booking Ticket Modal (มีปุ่มกากบาท X มุมขวาบน + รองรับการเลื่อนบน iOS และ Android) -->
+  <div class="modal-overlay" id="bookingTicketModal">
+    <div class="modal ticket-modal-box">
+      <!-- ส่วนหัวตั๋ว (ล็อกติดด้านบนเสมอ พร้อมปุ่มกากบาท X กดปิดได้ทันที) -->
+      <div style="background: var(--primary); color: white; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <div>
+          <div style="font-size: 0.72rem; opacity: 0.85; letter-spacing: 0.06em; text-transform: uppercase;">Sport Circle E-Ticket</div>
+          <h3 style="margin: 2px 0 0 0; font-size: 1.15rem; color: white;">ตั๋วยืนยันการจองสนาม</h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="ticketStatusBadge" style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;">APPROVED</span>
+          <button type="button" onclick="closeModal('bookingTicketModal')" aria-label="Close ticket" style="width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.25); color: #fff; border: 1.5px solid rgba(255,255,255,0.6); font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">✕</button>
+        </div>
+      </div>
+      
+      <!-- ส่วนเนื้อหาตั๋ว (เลื่อนขึ้น-ลงได้ลื่นไหลทั้ง iOS และ Android) -->
+      <div id="bookingTicketBody" class="ticket-modal-body">
+        <!-- รายละเอียดตั๋วจะถูกเติมด้วย JavaScript -->
+      </div>
+
+      <!-- ส่วนท้ายตั๋ว (ล็อกติดด้านล่างเสมอ) -->
+      <div id="bookingTicketFooter" style="padding: 14px 20px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0;">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeModal('bookingTicketModal')">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal สำหรับดูรายละเอียดสล็อตเวลาและจัดการการจอง -->
+  <div class="modal-overlay" id="slotDetailModal">
+    <div class="modal" style="max-width: 520px; width: 100%; border-radius: 16px; overflow: hidden; padding: 0;">
+      <div id="slotDetailHeader" style="padding: 16px 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: white;" id="slotModalTitle">รายละเอียดการจองสนาม</h3>
+        <button type="button" onclick="closeModal('slotDetailModal')" style="background: none; border: none; font-size: 1.4rem; color: white; cursor: pointer;">✕</button>
+      </div>
+      <div id="slotDetailBody" style="padding: 20px; max-height: 75vh; overflow-y: auto;">
+        <!-- Filled by JS -->
+      </div>
+      <div id="slotDetailFooter" style="padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal สำหรับจองหน้างาน (Walk-in Booking) เมื่อคลิกที่ช่องว่าง -->
+  <div class="modal-overlay" id="walkInModal">
+    <div class="modal" style="max-width: 500px; width: 100%; border-radius: 16px; padding: 22px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text);">⚡ จองสนามหน้างาน (Walk-in)</h3>
+        <button type="button" onclick="closeModal('walkInModal')" style="background: none; border: none; font-size: 1.3rem; color: var(--text-secondary); cursor: pointer;">✕</button>
+      </div>
+      <div style="background: #f1f5f9; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 0.88rem;">
+        <div>🏟️ สนาม: <strong id="walkInFacilityName">-</strong></div>
+        <div style="margin-top: 4px;">⏰ ช่วงเวลา: <strong id="walkInTimeSlot">-</strong> (<span id="walkInDateStr">-</span>)</div>
+      </div>
+      <form onsubmit="handleWalkInSubmit(event)">
+        <input type="hidden" id="walkInFacilityId">
+        <input type="hidden" id="walkInDate">
+        <input type="hidden" id="walkInStart">
+        <input type="hidden" id="walkInEnd">
+        <div class="form-group">
+          <label>ชื่อลูกค้า / ผู้จอง <span style="color:red">*</span></label>
+          <input type="text" id="walkInCustomerName" placeholder="เช่น คุณสมชาย ใจดี (Walk-in)" required>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์ <span style="color:red">*</span></label>
+          <input type="tel" id="walkInCustomerPhone" placeholder="เช่น 0812345678" required>
+        </div>
+
+        <!-- 📦 ส่วนเลือกเช่า/ซื้ออุปกรณ์เสริมของสนามนั้นๆ ตอนแอดมินจองให้ลูกค้า -->
+        <div id="walkInAddonsSection" style="display:none; margin-bottom: 16px; padding: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.84rem; font-weight:700; color:#0f172a;">📦 เลือกเช่า/ซื้ออุปกรณ์เสริม</span>
+            <span id="walkInAddonSummaryBadge" style="font-size:0.78rem; font-weight:700; color:var(--primary); background:#e0f2fe; padding:2px 8px; border-radius:12px;">+฿0</span>
+          </div>
+          <div id="walkInAddonsList" style="display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>ค่าบริการรวม (฿) <span style="color:red">*</span></label>
+            <input type="number" id="walkInPrice" required>
+          </div>
+          <div class="form-group">
+            <label>วิธีชำระเงิน <span style="color:red">*</span></label>
+            <select id="walkInPaymentMethod">
+              <option value="cash">💵 เงินสด (ชำระแล้ว)</option>
+              <option value="transfer">📱 สแกนโอน (ชำระแล้ว)</option>
+              <option value="pending">⏳ ยังไม่ชำระ</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>สถานะการเข้าใช้งาน</label>
+          <select id="walkInCheckInStatus">
+            <option value="completed">✓ เช็กอินเข้าใช้งานทันที</option>
+            <option value="approved">⏳ รอลูกค้ามาเช็กอิน (จองล่วงหน้า)</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeModal('walkInModal')">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1.5;" id="walkInSubmitBtn">💾 บันทึกการจอง</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================
+       NOTIFICATION DRAWER & BACKDROP (สำหรับ User และ Admin)
+       ======================================================= -->
+  <div class="notif-backdrop" id="notifBackdrop" onclick="toggleNotificationDrawer(false)"></div>
+  <aside class="notif-drawer" id="notifDrawer">
+    <div class="notif-drawer-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="notif-header-icon"><i data-lucide="bell" width="20" height="20"></i></div>
+        <div>
+          <h3 style="margin:0; font-size:1.15rem; color:var(--text); font-weight:800;">การแจ้งเตือน</h3>
+          <span class="notif-header-subtitle" id="notifRoleSubtitle">ศูนย์แจ้งเตือนแบบเรียลไทม์</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button type="button" class="notif-mark-read-btn" onclick="markAllNotificationsAsRead()" title="ทำเครื่องหมายว่าอ่านแล้วทั้งหมด">
+          <i data-lucide="check-check" width="16" height="16"></i> อ่านทั้งหมด
+        </button>
+        <button type="button" class="notif-close-btn" onclick="toggleNotificationDrawer(false)" aria-label="Close notifications">✕</button>
+      </div>
+    </div>
+
+    <!-- แถบกรองสถานะ: ทั้งหมด / ยังไม่อ่าน -->
+    <div class="notif-tabs">
+      <button type="button" class="notif-tab active" id="tabNotifAll" onclick="filterNotifTab('all')">ทั้งหมด (<span id="notifTotalCount">0</span>)</button>
+      <button type="button" class="notif-tab" id="tabNotifUnread" onclick="filterNotifTab('unread')">ยังไม่อ่าน (<span id="notifUnreadCount">0</span>)</button>
+    </div>
+
+    <!-- รายการแจ้งเตือน -->
+    <div class="notif-list-container" id="notifListContainer">
+      <div style="text-align:center; padding:40px 20px; color:var(--text-tertiary);">
+        <i data-lucide="bell-off" width="36" height="36" style="opacity:0.4; margin-bottom:8px;"></i>
+        <div>กำลังโหลดการแจ้งเตือน...</div>
+      </div>
+    </div>
+
+    <!-- ท้ายลิ้นชักการแจ้งเตือน -->
+    <div class="notif-drawer-footer">
+      <button type="button" class="btn btn-secondary btn-block" onclick="refreshNotifications(true)" style="font-size:0.82rem; padding:8px 14px; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <i data-lucide="refresh-cw" width="14" height="14"></i> รีเฟรชการแจ้งเตือน
+      </button>
+    </div>
+  </aside>
+
+  <!-- Scripts: โหลด Data ก่อน แล้วตามด้วย logic หลักของแอป -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
